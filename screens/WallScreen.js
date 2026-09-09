@@ -71,24 +71,39 @@ export default function WallScreen() {
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={styles.headerArea}>
-          <Text style={[styles.headerTitle, { color: colors.text, fontSize: 28 * fontSize }]}>Freedom Wall</Text>
-          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsSidebarOpen(true); }}>
-            <Ionicons name="menu" size={32} color={colors.text} />
+          <View>
+            <Text style={[styles.headerTitle, { color: colors.text, fontSize: 26 * fontSize }]}>Freedom Wall</Text>
+            <Text style={[styles.headerSub, { color: colors.subtext, fontSize: 13 * fontSize }]}>Say it anonymously</Text>
+          </View>
+          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsSidebarOpen(true); }} style={[styles.menuBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Ionicons name="menu" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+          {messages.length === 0 && (
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIconCircle, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="chatbubble-ellipses-outline" size={28} color={colors.subtext} />
+              </View>
+              <Text style={[styles.emptyText, { color: colors.subtext, fontSize: 14 * fontSize }]}>Be the first to whisper something</Text>
+            </View>
+          )}
           {messages.map((msg) => (
             <View key={msg.id} style={[styles.bubble, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.msgText, { color: colors.text, fontSize: 16 * fontSize }]}>{msg.text}</Text>
-              <View style={styles.meta}>
-                <Text style={[styles.metaText, { color: colors.subtext }]}>👻 {msg.author} • {msg.time}</Text>
-                {isAdmin && (
-                  <TouchableOpacity onPress={() => confirmDelete(msg.id)}>
-                    <Text style={styles.delText}>Wipe</Text>
-                  </TouchableOpacity>
-                )}
+              <View style={styles.bubbleTopRow}>
+                <View style={[styles.avatarChip, { backgroundColor: colors.background }]}>
+                  <Text style={styles.avatarEmoji}>👻</Text>
+                </View>
+                <Text style={[styles.metaText, { color: colors.subtext }]}>{msg.author} • {msg.time}</Text>
               </View>
+              <Text style={[styles.msgText, { color: colors.text, fontSize: 16 * fontSize }]}>{msg.text}</Text>
+              {isAdmin && (
+                <TouchableOpacity style={styles.wipeBtn} onPress={() => confirmDelete(msg.id)}>
+                  <Ionicons name="trash-outline" size={11} color="#FF6B6B" />
+                  <Text style={styles.delText}>Wipe</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
         </ScrollView>
@@ -102,7 +117,7 @@ export default function WallScreen() {
           value={newMessage}
           onChangeText={setNewMessage}
         />
-        <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.primary }]} onPress={postMessage}>
+        <TouchableOpacity activeOpacity={0.85} style={[styles.sendBtn, { backgroundColor: colors.primary }]} onPress={postMessage}>
           <Ionicons name="paper-plane" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
@@ -112,17 +127,25 @@ export default function WallScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  blobViolet: { position: 'absolute', top: -50, right: -50, width: 350, height: 350, backgroundColor: '#6D5AED', borderRadius: 175, opacity: 0.25 },
-  blobGreen: { position: 'absolute', bottom: 100, left: -100, width: 300, height: 300, backgroundColor: '#36E08B', borderRadius: 150, opacity: 0.25 },
-  blobBlue: { position: 'absolute', top: '30%', left: '20%', width: 250, height: 250, backgroundColor: '#1D70F5', borderRadius: 125, opacity: 0.2 },
-  headerArea: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 70, paddingHorizontal: 25, paddingBottom: 20 },
+  blobViolet: { position: 'absolute', top: -50, right: -50, width: 350, height: 350, backgroundColor: '#6D5AED', borderRadius: 175, opacity: 0.2 },
+  blobGreen: { position: 'absolute', bottom: 100, left: -100, width: 300, height: 300, backgroundColor: '#36E08B', borderRadius: 150, opacity: 0.2 },
+  blobBlue: { position: 'absolute', top: '30%', left: '20%', width: 250, height: 250, backgroundColor: '#1D70F5', borderRadius: 125, opacity: 0.15 },
+  headerArea: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 65, paddingHorizontal: 25, paddingBottom: 20 },
   headerTitle: { fontFamily: 'Poppins_700Bold' },
-  bubble: { padding: 20, borderRadius: 24, marginBottom: 12, borderWidth: 1 },
-  msgText: { fontFamily: 'Poppins_600SemiBold', marginBottom: 10, lineHeight: 24 },
-  meta: { flexDirection: 'row', justifyContent: 'space-between' },
+  headerSub: { fontFamily: 'Poppins_400Regular', marginTop: 2 },
+  menuBtn: { padding: 10, borderRadius: 14, borderWidth: 1 },
+  emptyState: { alignItems: 'center', marginTop: 50 },
+  emptyIconCircle: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', borderWidth: 1, marginBottom: 12 },
+  emptyText: { fontFamily: 'Poppins_500Medium' },
+  bubble: { padding: 18, borderRadius: 24, marginBottom: 14, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+  bubbleTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  avatarChip: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
+  avatarEmoji: { fontSize: 14 },
+  msgText: { fontFamily: 'Poppins_600SemiBold', lineHeight: 24, marginBottom: 4 },
   metaText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  wipeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', marginTop: 6 },
   delText: { color: '#FF6B6B', fontSize: 12, fontFamily: 'Poppins_700Bold' },
-  inputArea: { position: 'absolute', bottom: 85, left: 15, right: 15, flexDirection: 'row', padding: 10, borderRadius: 30, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
+  inputArea: { position: 'absolute', bottom: 85, left: 15, right: 15, flexDirection: 'row', padding: 10, borderRadius: 30, borderWidth: 1, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
   input: { flex: 1, borderRadius: 20, paddingHorizontal: 20, marginRight: 10, fontSize: 15, fontFamily: 'Poppins_400Regular' },
   sendBtn: { width: 45, height: 45, borderRadius: 25, justifyContent: 'center', alignItems: 'center' }
 });
