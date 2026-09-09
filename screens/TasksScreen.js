@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import { AppContext } from '../context/AppContext';
@@ -132,13 +133,22 @@ export default function TasksScreen() {
 
   const displayedTasks = tasks.filter(t => t.status === activeTab);
 
+  const TAB_META = {
+    active: { icon: 'flash-outline', color: '#48C9B0' },
+    completed: { icon: 'checkmark-done-outline', color: colors.primary },
+    missed: { icon: 'alert-circle-outline', color: '#FF6B6B' }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.primary }]}>
-      <View style={styles.blueHeader}>
+      <LinearGradient colors={[colors.primary, '#0F4FC7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.blueHeader}>
         <View style={styles.headerTopRow}>
-          <Text style={[styles.monthText, { fontSize: 24 * fontSize }]}>My Schedule</Text>
+          <View>
+            <Text style={[styles.monthText, { fontSize: 22 * fontSize }]}>My Schedule</Text>
+            <Text style={styles.monthSub}>{displayedTasks.length === 0 ? 'Nothing due' : `${displayedTasks.length} ${activeTab} task${displayedTasks.length === 1 ? '' : 's'}`}</Text>
+          </View>
           <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsSidebarOpen(true); }} style={styles.menuBtn}>
-            <Ionicons name="menu" size={32} color="#FFF" />
+            <Ionicons name="menu" size={24} color="#FFF" />
           </TouchableOpacity>
         </View>
 
@@ -157,10 +167,14 @@ export default function TasksScreen() {
             <Text style={styles.progressLabel}>{Math.round(progressPercentage)}%</Text>
           </View>
           <View style={styles.progressTrack}>
-            <Animated.View style={[styles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }]} />
+            <Animated.View style={styles.progressFillWrap0}>
+              <Animated.View style={[styles.progressFillWrap, { width: progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }]}>
+                <LinearGradient colors={['#36E08B', '#22C55E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.progressFill} />
+              </Animated.View>
+            </Animated.View>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       <Animated.View style={[styles.whiteContainer, { backgroundColor: colors.background, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.tabContainer}>
@@ -171,7 +185,8 @@ export default function TasksScreen() {
                 style={[styles.tabButton, activeTab === tab && [styles.activeTabButton, { backgroundColor: colors.background }]]} 
                 onPress={() => { Haptics.selectionAsync(); setActiveTab(tab); }}
               >
-                <Text style={[styles.tabText, activeTab === tab ? { color: colors.primary } : { color: colors.subtext }]}>
+                <Ionicons name={TAB_META[tab].icon} size={13} color={activeTab === tab ? TAB_META[tab].color : colors.subtext} style={{ marginRight: 5 }} />
+                <Text style={[styles.tabText, activeTab === tab ? { color: colors.text } : { color: colors.subtext }]}>
                   {tab.toUpperCase()}
                 </Text>
               </TouchableOpacity>
@@ -179,19 +194,23 @@ export default function TasksScreen() {
           </BlurView>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
           {displayedTasks.length === 0 && (
             <View style={styles.emptyState}>
-              <Ionicons name="sparkles" size={50} color={colors.subtext} />
-              <Text style={[styles.emptyText, { color: colors.subtext, fontSize: 15 * fontSize }]}>You're all caught up!</Text>
+              <View style={[styles.emptyIconCircle, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="sparkles" size={28} color={colors.subtext} />
+              </View>
+              <Text style={[styles.emptyText, { color: colors.text, fontSize: 15 * fontSize }]}>You're all caught up!</Text>
             </View>
           )}
           {displayedTasks.map(task => (
             <View key={task.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
-              <View style={[styles.cardIndicator, { backgroundColor: activeTab === 'active' ? '#48C9B0' : activeTab === 'completed' ? colors.border : '#FF6B6B' }]} />
+              <View style={[styles.cardIndicator, { backgroundColor: activeTab === 'active' ? '#48C9B0' : activeTab === 'completed' ? colors.primary : '#FF6B6B' }]} />
               <View style={styles.cardContent}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.taskEmoji}>{task.emoji}</Text>
+                  <View style={[styles.emojiBadge, { backgroundColor: colors.background }]}>
+                    <Text style={styles.taskEmoji}>{task.emoji}</Text>
+                  </View>
                   <Text style={[styles.taskTitle, { color: colors.text, fontSize: 16 * fontSize }, activeTab === 'completed' && [styles.taskTitleDone, { color: colors.subtext }]]} numberOfLines={1}>
                     {task.title}
                   </Text>
@@ -201,7 +220,7 @@ export default function TasksScreen() {
               
               <View style={styles.actionGroup}>
                 {activeTab === 'active' && (
-                  <TouchableOpacity style={styles.iconBtnDone} onPress={() => updateStatus(task.id, 'completed')}>
+                  <TouchableOpacity activeOpacity={0.85} style={styles.iconBtnDone} onPress={() => updateStatus(task.id, 'completed')}>
                     <Ionicons name="checkmark" size={18} color="#FFF" />
                   </TouchableOpacity>
                 )}
@@ -214,8 +233,10 @@ export default function TasksScreen() {
         </ScrollView>
       </Animated.View>
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setModalVisible(true); }}>
-        <Ionicons name="add" size={32} color="#FFF" />
+      <TouchableOpacity activeOpacity={0.85} style={styles.fabWrap} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setModalVisible(true); }}>
+        <LinearGradient colors={[colors.primary, '#60C5F1']} style={styles.fab}>
+          <Ionicons name="add" size={32} color="#FFF" />
+        </LinearGradient>
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="fade" transparent={true}>
@@ -239,7 +260,7 @@ export default function TasksScreen() {
               </TouchableOpacity>
 
               <TextInput 
-                style={[styles.textInput, { backgroundColor: colors.background, color: colors.text }]} 
+                style={[styles.textInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
                 placeholder="What needs to be done?" 
                 placeholderTextColor={colors.subtext} 
                 value={newTask} 
@@ -248,11 +269,11 @@ export default function TasksScreen() {
             </View>
             
             <View style={styles.pickerRow}>
-              <TouchableOpacity style={[styles.pickerBtn, { backgroundColor: colors.background }]} onPress={() => { setPickerMode('date'); setShowPicker(true); }}>
-                <Ionicons name="calendar-outline" size={18} color={colors.text} /><Text style={[styles.pickerText, { color: colors.text }]}>{getSafeDate(date)}</Text>
+              <TouchableOpacity style={[styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => { setPickerMode('date'); setShowPicker(true); }}>
+                <Ionicons name="calendar-outline" size={18} color={colors.primary} /><Text style={[styles.pickerText, { color: colors.text }]}>{getSafeDate(date)}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.pickerBtn, { backgroundColor: colors.background }]} onPress={() => { setPickerMode('time'); setShowPicker(true); }}>
-                <Ionicons name="time-outline" size={18} color={colors.text} /><Text style={[styles.pickerText, { color: colors.text }]}>{getSafeTime(date)}</Text>
+              <TouchableOpacity style={[styles.pickerBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => { setPickerMode('time'); setShowPicker(true); }}>
+                <Ionicons name="time-outline" size={18} color={colors.primary} /><Text style={[styles.pickerText, { color: colors.text }]}>{getSafeTime(date)}</Text>
               </TouchableOpacity>
             </View>
             
@@ -262,8 +283,10 @@ export default function TasksScreen() {
               <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.background }]} onPress={() => setModalVisible(false)}>
                 <Text style={[styles.btnText, { color: colors.subtext }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={addTask}>
-                <Text style={styles.btnTextSubmit}>Save Task</Text>
+              <TouchableOpacity style={styles.submitBtnWrap} onPress={addTask}>
+                <LinearGradient colors={[colors.primary, '#0F4FC7']} style={styles.submitBtn}>
+                  <Text style={styles.btnTextSubmit}>Save Task</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -307,54 +330,61 @@ export default function TasksScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  blueHeader: { paddingTop: 60, paddingBottom: 30 },
+  blueHeader: { paddingTop: 58, paddingBottom: 30 },
   headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, marginBottom: 20 },
   monthText: { fontFamily: 'Poppins_700Bold', color: '#FFF' },
-  menuBtn: { padding: 5 },
+  monthSub: { fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  menuBtn: { padding: 8, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)' },
   calendarStrip: { paddingHorizontal: 15 },
   dateBlock: { alignItems: 'center', paddingVertical: 15, paddingHorizontal: 18, borderRadius: 25, marginHorizontal: 5, backgroundColor: 'rgba(255,255,255,0.1)' },
-  dateBlockActive: { backgroundColor: '#FFF' },
+  dateBlockActive: { backgroundColor: '#FFF', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   dayText: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontFamily: 'Poppins_700Bold', marginBottom: 5 },
   dateText: { fontSize: 18, color: '#FFF', fontFamily: 'Poppins_700Bold' },
   progressContainer: { paddingHorizontal: 25, marginTop: 25 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   progressLabel: { color: 'rgba(255,255,255,0.7)', fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
   progressTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#36E08B', borderRadius: 4 },
+  progressFillWrap0: { flex: 1 },
+  progressFillWrap: { height: '100%', borderRadius: 4, overflow: 'hidden' },
+  progressFill: { flex: 1 },
   whiteContainer: { flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingTop: 25 },
   tabContainer: { paddingHorizontal: 20, marginBottom: 20 },
   tabGlass: { flexDirection: 'row', borderRadius: 30, padding: 5 },
-  tabButton: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 25 },
-  activeTabButton: { elevation: 2 },
+  tabButton: { flex: 1, flexDirection: 'row', paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 25 },
+  activeTabButton: { elevation: 2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   tabText: { fontSize: 12, fontFamily: 'Poppins_700Bold' },
-  emptyState: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontFamily: 'Poppins_400Regular', marginTop: 10 },
-  card: { flexDirection: 'row', borderRadius: 20, marginBottom: 15, overflow: 'hidden', alignItems: 'center' },
-  cardIndicator: { width: 6, height: '100%' },
-  cardContent: { flex: 1, padding: 18 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  taskEmoji: { fontSize: 18, marginRight: 8 },
+  emptyState: { alignItems: 'center', marginTop: 50 },
+  emptyIconCircle: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', borderWidth: 1, marginBottom: 12 },
+  emptyText: { fontFamily: 'Poppins_700Bold' },
+  card: { flexDirection: 'row', borderRadius: 20, marginBottom: 14, overflow: 'hidden', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
+  cardIndicator: { width: 5, height: '100%' },
+  cardContent: { flex: 1, padding: 16 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 10 },
+  emojiBadge: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  taskEmoji: { fontSize: 16 },
   taskTitle: { flex: 1, fontFamily: 'Poppins_600SemiBold' },
   taskTitleDone: { textDecorationLine: 'line-through' },
-  taskDate: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginLeft: 26 },
+  taskDate: { fontSize: 12, fontFamily: 'Poppins_400Regular', marginLeft: 42 },
   actionGroup: { flexDirection: 'row', paddingRight: 10, alignItems: 'center' },
   iconBtnDone: { backgroundColor: '#48C9B0', padding: 10, borderRadius: 12, marginRight: 5 },
   threeDotBtn: { padding: 8 },
-  fab: { position: 'absolute', bottom: 90, right: 20, width: 65, height: 65, borderRadius: 35, justifyContent: 'center', alignItems: 'center', elevation: 6 },
+  fabWrap: { position: 'absolute', bottom: 90, right: 20, shadowColor: '#1D70F5', shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  fab: { width: 65, height: 65, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalBox: { padding: 25, borderRadius: 24, elevation: 10 },
-  modalTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 15 },
+  modalBox: { padding: 25, borderRadius: 26, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 20, shadowOffset: { width: 0, height: 10 } },
+  modalTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 18 },
   inputRow: { flexDirection: 'row', gap: 10, marginBottom: 20, alignItems: 'center' },
   emojiPickerTrigger: { width: 60, height: 60, borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
   emojiPlaceholderContainer: { position: 'relative', justifyContent: 'center', alignItems: 'center' },
   miniPlus: { position: 'absolute', top: -3, right: -4 },
   selectedEmojiText: { fontSize: 26 },
-  textInput: { flex: 1, borderRadius: 15, paddingHorizontal: 18, fontSize: 16, fontFamily: 'Poppins_400Regular', height: 60 },
+  textInput: { flex: 1, borderRadius: 15, paddingHorizontal: 18, fontSize: 16, fontFamily: 'Poppins_400Regular', height: 60, borderWidth: 1 },
   pickerRow: { flexDirection: 'row', gap: 15, marginBottom: 25 },
-  pickerBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, borderRadius: 15, gap: 8 },
+  pickerBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, borderRadius: 15, gap: 8, borderWidth: 1 },
   pickerText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   modalActions: { flexDirection: 'row', gap: 12 },
   cancelBtn: { flex: 1, padding: 16, borderRadius: 15, alignItems: 'center' },
+  submitBtnWrap: { flex: 1, borderRadius: 15, overflow: 'hidden' },
   submitBtn: { flex: 1, padding: 16, borderRadius: 15, alignItems: 'center' },
   btnText: { fontFamily: 'Poppins_700Bold', fontSize: 15 },
   btnTextSubmit: { color: '#FFFFFF', fontFamily: 'Poppins_700Bold', fontSize: 15 },
